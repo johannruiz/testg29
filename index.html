@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Logitech G29 · WebHID Force Feedback Test</title>
+  <style>
+    :root { color-scheme: dark; font: 16px/1.5 system-ui, -apple-system, Segoe UI, sans-serif; background:#0f1420; color:#edf3fa }
+    * { box-sizing: border-box }
+    body { max-width: 780px; margin: 0 auto; padding: 32px 18px 60px }
+    h1 { font-size:clamp(1.5rem,4vw,2rem);margin:0 0 6px }
+    h2 {font-size:1.05rem;margin:0 0 12px}
+    p {margin: 8px 0 14px;color:#bfcada}
+    .sub {color:#a6bed3;margin-bottom:25px}
+    .panel {border:1px solid #344056;border-radius:14px;background:#192234;padding:18px;margin:16px 0}
+    .line {display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0}
+    button {border:1px solid #59748e;background:#24374e;color:#f6faff;padding:11px 16px;border-radius:10px;cursor:pointer;font:inherit;font-weight:600}
+    button:hover:enabled {background:#305171}
+    button:disabled {opacity:.38;cursor:not-allowed}
+    button.primary {background:#14675c;border-color:#2c9e8c}
+    button.danger {background:#913641;border-color:#eb767f}
+    #status {font-weight:700}
+    #status.connected {color:#8de9c4}
+    #status.disconnected {color:#ffd1a7}
+    .note {border-left:3px solid #e9a85e;padding-left:13px;color:#ffdda6}
+    .row {display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px 0}
+    progress {width:100%;height:14px;accent-color:#5bbfa7}
+    code {color:#d7eaff;background:#243346;padding:1px 5px;border-radius:4px}
+    pre {white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto;background:#0b1220;border-radius:9px;padding:12px;color:#b9d0e5;font-size:12px}
+    .small {font-size:13px}
+  </style>
+</head>
+<body>
+  <h1>G29 · WebHID FFB Test</h1>
+  <p class="sub">Standalone diagnostic · G29 PS3/PS4 USB modes · corrected 5-second rumble test</p>
+
+  <section class="panel">
+    <h2>1. Connect wheel</h2>
+    <div class="line">
+      <button id="connect" class="primary">Connect G29</button>
+      <button id="disconnect" disabled>Disconnect safely</button>
+    </div>
+    <div class="row"><span>Status</span><span id="status" class="disconnected">Not connected</span></div>
+    <div id="device" class="small">Requires Chrome / Edge desktop and HTTPS or localhost.</div>
+  </section>
+
+  <section class="panel">
+    <h2>2. Test force feedback</h2>
+    <p class="note"><strong>Safety:</strong> Secure the wheel, keep hands clear during the first test, and use its power adapter. A G29 can register steering and buttons over USB while the FFB motors lack power. This page caps test force to 12%.</p>
+    <div class="line">
+      <button id="rumble" class="primary" disabled>Test 5-second rumble (12% max)</button>
+      <button id="centering" disabled>Auto-center 3%</button>
+      <button id="stop" class="danger" disabled>STOP ALL FORCES</button>
+    </div>
+    <div class="row"><span>Effect</span><span id="effect">Idle</span></div>
+    <progress id="remaining" max="5000" value="0"></progress>
+    <p class="small">The G29 does not have two typical gamepad rumble motors. Here, “rumble” is simulated using short, alternating <em>steering forces</em>. No USB mode-changing commands are sent.</p>
+  </section>
+
+  <section class="panel">
+    <h2>3. Input diagnostics</h2>
+    <p class="small">Axes below use the report layout from the reference G29 WebHID demo; their mapping can differ by operating mode.</p>
+    <div class="row"><span>Steering</span><output id="steering">—</output></div><progress id="axis-steering" max="65535" value="32768"></progress>
+    <div class="row"><span>Accelerator</span><output id="accel">—</output></div><progress id="axis-accel" max="255" value="0"></progress>
+    <div class="row"><span>Brake</span><output id="brake">—</output></div><progress id="axis-brake" max="255" value="0"></progress>
+    <div class="row"><span>L1 / R1</span><output id="buttons">—</output></div>
+  </section>
+
+  <section class="panel"><h2>Diagnostic log</h2><pre id="log">Ready. Connect a G29 to begin.</pre></section>
+  <p class="small">Independent diagnostic based on the Logitech G29 WebHID command format demonstrated by <a href="https://github.com/nondebug/g29-wheel-demo" style="color:#89c9ff">nondebug/g29-wheel-demo</a>. Not affiliated with Logitech. This is not a general DirectInput driver and has not been hardware-tested by the author of this modified page.</p>
+
+<script>
+'use strict';
+// Only support the two G29 USB product IDs covered by the reference demo.
+const VENDOR = 0x046d;
+const PRODUCT_IDS = new Set([0xc24f, 0xc260]);
+const $ = id => document.getElementById(id);
+let wheel = null;
+let outputQueue = Promise.resolve();
+let effectToken = 0;
+let running = false;
+let activeEffect = 'idle';
+const FORCE_LIMIT = 0.12;
+const RUMBLE_MS = 5000;
+
+function log(message) {
+  const pre = $('log');
+  pre.textContent = `[${new Date().toLocaleTimeString()}] ${message}\n` + pre.textContent.slice(0, 4500);
+}
+function controls() {
+  const ready = Boolean(wheel && wheel.opened);
+  $('connect').disabled = ready;
+  $('disconnect').disabled = !ready;
+  $('rumble').disabled = !ready || running;
+  $('centering').disabled = !ready || running;
+  $('stop').disabled = !ready;
+  $('status').textContent = ready ? 'Connected' : 'Not connected';
+  $('status').className = ready ? 'connected' : 'disconnected';
+}
+function effectLabel(text) { $('effect').textContent = text; }
+function looksLikeG29(d) { return d && d.vendorId === VENDOR && PRODUCT_IDS.has(d.productId); }
+
+// Serialize HID writes so stop/clear cannot be reordered with effect updates.
+function send(bytes) {
+  const target = wheel;
+  if (!target || !target.opened) return Promise.reject(new Error('G29 not connected'));
+  const action = outputQueue.catch(() => {}).then(() => {
+    if (wheel !== target || !target.opened) return;
+    return target.sendReport(0, Uint8Array.from(bytes));
+  });
+  outputQueue = action;
+  return action;
+}
+
+// Logitech G29 constant-force slot 0 (report ID 0, seven-byte payload).
+// 0x80 is approximately neutral, smaller/larger values apply opposing torques.
+async function writeConstantForce(normalized) {
+  const clamped = Math.max(-FORCE_LIMIT, Math.min(FORCE_LIMIT, normalized));
+  const encoded = Math.max(0, Math.min(255, Math.round(127.5 * (1 + clamped))));
+  await send([0x11, 0x08, encoded, 0, 0, 0, 0]);
+}
+async function clearEffects() {
+  // Slot 0 force off; turn off the simple auto-centering mode as well.
+  await send([0x13, 0x00, 0, 0, 0, 0, 0]);
+  await send([0xf5, 0, 0, 0, 0, 0, 0]);
+}
+async function stopEffects() {
+  ++effectToken;  // Cancel any existing test loop immediately.
+  running = false;
+  activeEffect = 'idle';
+  effectLabel('Stopped');
+  $('remaining').value = 0;
+  controls();
+  if (!wheel?.opened) return;
+  try {
+    await clearEffects();
+    log('STOP sent: force slot cleared and auto-center disabled.');
+  } catch (error) {
+    log('Could not stop force: ' + error.message + '. Disconnect wheel power if needed.');
+  }
+}
+
+async function connectWheel() {
+  if (!('hid' in navigator) || !window.isSecureContext) {
+    log('WebHID unavailable. Use desktop Chrome/Edge over HTTPS or http://localhost.');
+    return;
+  }
+  try {
+    const choices = await navigator.hid.requestDevice({ filters: [
+      {vendorId: VENDOR, productId: 0xc24f},
+      {vendorId: VENDOR, productId: 0xc260}
+    ] });
+    if (!choices.length) { log('No device selected.'); return; }
+    const chosen = choices[0];
+    if (!looksLikeG29(chosen)) { log('Rejected: not a known G29 device.'); return; }
+    if (wheel?.opened) await disconnectWheel();
+    if (!chosen.opened) await chosen.open();
+    wheel = chosen;
+    wheel.addEventListener('inputreport', readInput);
+    $('device').textContent = `${wheel.productName} · VID 046D · PID ${wheel.productId.toString(16).toUpperCase()}`;
+    effectLabel('Ready');
+    controls();
+    log('G29 connected. No force applied; choose a low-strength test.');
+  } catch (e) { log(`Connection failed: ${e.name}: ${e.message}`); }
+}
+async function disconnectWheel() {
+  await stopEffects();
+  const old = wheel;
+  if (!old) return;
+  old.removeEventListener('inputreport', readInput);
+  // The close can fail if the USB cable was already removed.
+  try { if (old.opened) await old.close(); } catch (e) { log('Close: ' + e.message); }
+  if (wheel === old) wheel = null;
+  $('device').textContent = 'Disconnected';
+  controls();
+  log('G29 disconnected.');
+}
+
+async function runRumble() {
+  if (!wheel?.opened || running) return;
+  await stopEffects();
+  if (!wheel?.opened || document.hidden) return;
+  const myToken = ++effectToken;
+  running = true;
+  activeEffect = 'rumble';
+  controls();
+  log('Starting 5-second low-force alternating steering feedback.');
+  const startedAt = performance.now();
+  const stepMs = 16;
+  try {
+    while (myToken === effectToken && wheel?.opened && !document.hidden) {
+      const elapsed = performance.now() - startedAt;
+      if (elapsed >= RUMBLE_MS) break;
+      // Soft fade-in/out. Oscillation roughly 15 Hz to mimic rumble on an FFB motor.
+      const fade = Math.min(1, elapsed / 200, (RUMBLE_MS - elapsed) / 200);
+      const direction = Math.sin(2 * Math.PI * 15 * elapsed / 1000) >= 0 ? 1 : -1;
+      const force = FORCE_LIMIT * Math.max(0, fade) * direction;
+      await writeConstantForce(force);
+      $('remaining').value = elapsed;
+      effectLabel(`Rumble: ${(RUMBLE_MS - elapsed) / 1000 < 0 ? 0 : (RUMBLE_MS - elapsed) / 1000 | 0}s remaining`);
+      await new Promise(resolve => setTimeout(resolve, stepMs));
+    }
+  } catch (e) { log('Rumble failed: ' + e.message); }
+  finally {
+    if (myToken === effectToken) {
+      log('Rumble test finished.');
+      await stopEffects();
+    }
+  }
+}
+
+async function setLowAutocenter() {
+  if (!wheel?.opened || running) return;
+  await stopEffects();
+  if (!wheel?.opened) return;
+  try {
+    // Standard command layout from the demo, strength limited to 3%.
+    const value = 0.03 * 0xffff;
+    const gainA = Math.round(0x0c * value / 0xaaaa);
+    const gainB = Math.round(0x80 * value / 0xaaaa);
+    await send([0xfe, 0x0d, gainA, gainA, gainB, 0, 0]);
+    await send([0x14, 0, 0, 0, 0, 0, 0]);
+    activeEffect = 'autocenter';
+    effectLabel('Auto-center 3% (press STOP to disable)');
+    log('Low auto-center active. Press STOP ALL FORCES to disable it.');
+  } catch(e) { log('Auto-center failed: ' + e.message); await stopEffects(); }
+}
+
+function readInput(event) {
+  if (event.device !== wheel) return;
+  const data = event.data;
+  if (!data || data.byteLength < 9) return;
+  // These offsets match the G29 input report in the source demo.
+  const steering = data.getUint16(4, true);
+  const accel = 255 - data.getUint8(6);
+  const brake = 255 - data.getUint8(7);
+  $('steering').textContent = `${((steering / 65535) * 100).toFixed(1)}%`;
+  $('accel').textContent = `${Math.round(accel / 255 * 100)}%`;
+  $('brake').textContent = `${Math.round(brake / 255 * 100)}%`;
+  $('axis-steering').value = steering;
+  $('axis-accel').value = accel;
+  $('axis-brake').value = brake;
+  const buttons = data.getUint8(1);
+  $('buttons').textContent = `${(buttons & 0x02) ? 'L1 pressed' : 'L1 released'} · ${(buttons & 0x01) ? 'R1 pressed' : 'R1 released'}`;
+}
+
+$('connect').addEventListener('click', connectWheel);
+$('disconnect').addEventListener('click', disconnectWheel);
+$('rumble').addEventListener('click', runRumble);
+$('centering').addEventListener('click', setLowAutocenter);
+$('stop').addEventListener('click', stopEffects);
+
+if ('hid' in navigator) {
+  navigator.hid.addEventListener('disconnect', async event => {
+    if (event.device !== wheel) return;
+    ++effectToken;
+    running = false;
+    wheel = null;
+    $('device').textContent = 'USB disconnected';
+    effectLabel('Disconnected');
+    controls();
+    log('USB device disconnected.');
+  });
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { void stopEffects(); }
+});
+window.addEventListener('pagehide', () => { void stopEffects(); });
+controls();
+if (!('hid' in navigator)) log('This browser does not expose WebHID. Try Chrome or Edge desktop.');
+</script>
+</body>
+</html>
