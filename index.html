@@ -1,273 +1,328 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Logitech G29 · WebHID Force Feedback Test</title>
-  <style>
-    :root { color-scheme: dark; font: 16px/1.5 system-ui, -apple-system, Segoe UI, sans-serif; background:#0f1420; color:#edf3fa }
-    * { box-sizing: border-box }
-    body { max-width: 780px; margin: 0 auto; padding: 32px 18px 60px }
-    h1 { font-size:clamp(1.5rem,4vw,2rem);margin:0 0 6px }
-    h2 {font-size:1.05rem;margin:0 0 12px}
-    p {margin: 8px 0 14px;color:#bfcada}
-    .sub {color:#a6bed3;margin-bottom:25px}
-    .panel {border:1px solid #344056;border-radius:14px;background:#192234;padding:18px;margin:16px 0}
-    .line {display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0}
-    button {border:1px solid #59748e;background:#24374e;color:#f6faff;padding:11px 16px;border-radius:10px;cursor:pointer;font:inherit;font-weight:600}
-    button:hover:enabled {background:#305171}
-    button:disabled {opacity:.38;cursor:not-allowed}
-    button.primary {background:#14675c;border-color:#2c9e8c}
-    button.danger {background:#913641;border-color:#eb767f}
-    #status {font-weight:700}
-    #status.connected {color:#8de9c4}
-    #status.disconnected {color:#ffd1a7}
-    .note {border-left:3px solid #e9a85e;padding-left:13px;color:#ffdda6}
-    .row {display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px 0}
-    progress {width:100%;height:14px;accent-color:#5bbfa7}
-    code {color:#d7eaff;background:#243346;padding:1px 5px;border-radius:4px}
-    pre {white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto;background:#0b1220;border-radius:9px;padding:12px;color:#b9d0e5;font-size:12px}
-    .small {font-size:13px}
-  </style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Logitech G29 — WebHID Complete FFB Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#0c131f;--panel:#192436;--line:#334660;--fg:#eef5ff;--muted:#a9bdd2;--accent:#79d7ce;font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+*{box-sizing:border-box}body{background:var(--bg);color:var(--fg);max-width:1060px;margin:auto;padding:26px 16px 54px}h1{font-size:clamp(23px,4vw,34px);margin:0 0 6px}h2{font-size:17px;margin:0 0 12px}h3{font-size:14px;margin:0 0 8px;color:var(--muted)}p{color:var(--muted);margin:8px 0 12px}a{color:#9bddff}.subtitle{margin-bottom:18px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:14px}.panel{border:1px solid var(--line);background:var(--panel);border-radius:15px;padding:18px;margin:0 0 14px;min-width:0}.panel.full{grid-column:1/-1}.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}button,select,input[type=number]{background:#263b55;border:1px solid #53718e;color:var(--fg);padding:9px 13px;border-radius:9px;font:inherit}button{cursor:pointer;font-weight:600}button:hover:enabled{background:#355578}button:disabled{opacity:.4;cursor:not-allowed}.main{background:#126d61;border-color:#4ac7b3}.stop{background:#9b2938;border:2px solid #ff929d;color:white;font-weight:800;font-size:17px;padding:13px 20px}.stop:hover:enabled{background:#be3649}.danger-panel{border-color:#bd775e;background:#312a2b}.warn{color:#ffddba}.row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:10px 0}.row>label{flex:1}.value{font-variant-numeric:tabular-nums;min-width:55px;text-align:right;font-weight:650;color:var(--accent)}.range{width:100%;accent-color:var(--accent)}.inputrow{display:grid;grid-template-columns:1fr 75px;align-items:center;gap:10px;margin:12px 0}.inputrow label{display:block;font-weight:600}.inputrow input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--accent)}.inputrow input[type=number]{width:75px;text-align:center;padding:6px}.note{font-size:12px;color:#bdd0e4}.status{font-weight:700}.ok{color:#98efc4}.bad{color:#ffbcac}.tag{display:inline-block;padding:2px 8px;border:1px solid #61819a;border-radius:100px;color:#b7d5f1;font-size:12px}.inline{display:flex;align-items:center;gap:8px}.inline input{width:17px;height:17px;accent-color:#64ccbf}.smallbox{display:grid;grid-template-columns:1fr auto;gap:5px;padding:7px 0;border-bottom:1px solid #334660}.smallbox meter{width:100%}canvas{max-width:100%;height:auto;background:#101b2a;border-radius:10px;border:1px solid #455c7a}pre{background:#0a111e;border-radius:10px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;padding:14px;color:#bfe1fa;font-size:12px}progress{width:100%;height:12px;accent-color:#62d6be}kbd{border:1px solid #8ca0ad;border-radius:4px;padding:0px 6px;background:#25374d}#buttons{word-break:break-word}.sticky{position:sticky;top:0;z-index:3;background:rgba(12,19,31,.96);border:1px solid #715161;border-radius:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:7px 12px;margin-bottom:14px;backdrop-filter:blur(6px)}@media(max-width:680px){.grid{display:block}.sticky{position:static}}
+</style>
 </head>
 <body>
-  <h1>G29 · WebHID FFB Test</h1>
-  <p class="sub">Standalone diagnostic · G29 PS3/PS4 USB modes · corrected 5-second rumble test</p>
-
-  <section class="panel">
-    <h2>1. Connect wheel</h2>
-    <div class="line">
-      <button id="connect" class="primary">Connect G29</button>
-      <button id="disconnect" disabled>Disconnect safely</button>
-    </div>
-    <div class="row"><span>Status</span><span id="status" class="disconnected">Not connected</span></div>
-    <div id="device" class="small">Requires Chrome / Edge desktop and HTTPS or localhost.</div>
-  </section>
-
-  <section class="panel">
-    <h2>2. Test force feedback</h2>
-    <p class="note"><strong>Safety:</strong> Secure the wheel, keep hands clear during the first test, and use its power adapter. A G29 can register steering and buttons over USB while the FFB motors lack power. This page caps test force to 12%.</p>
-    <div class="line">
-      <button id="rumble" class="primary" disabled>Test 5-second rumble (12% max)</button>
-      <button id="centering" disabled>Auto-center 3%</button>
-      <button id="stop" class="danger" disabled>STOP ALL FORCES</button>
-    </div>
-    <div class="row"><span>Effect</span><span id="effect">Idle</span></div>
-    <progress id="remaining" max="5000" value="0"></progress>
-    <p class="small">The G29 does not have two typical gamepad rumble motors. Here, “rumble” is simulated using short, alternating <em>steering forces</em>. No USB mode-changing commands are sent.</p>
-  </section>
-
-  <section class="panel">
-    <h2>3. Input diagnostics</h2>
-    <p class="small">Axes below use the report layout from the reference G29 WebHID demo; their mapping can differ by operating mode.</p>
-    <div class="row"><span>Steering</span><output id="steering">—</output></div><progress id="axis-steering" max="65535" value="32768"></progress>
-    <div class="row"><span>Accelerator</span><output id="accel">—</output></div><progress id="axis-accel" max="255" value="0"></progress>
-    <div class="row"><span>Brake</span><output id="brake">—</output></div><progress id="axis-brake" max="255" value="0"></progress>
-    <div class="row"><span>L1 / R1</span><output id="buttons">—</output></div>
-  </section>
-
-  <section class="panel"><h2>Diagnostic log</h2><pre id="log">Ready. Connect a G29 to begin.</pre></section>
-  <p class="small">Independent diagnostic based on the Logitech G29 WebHID command format demonstrated by <a href="https://github.com/nondebug/g29-wheel-demo" style="color:#89c9ff">nondebug/g29-wheel-demo</a>. Not affiliated with Logitech. This is not a general DirectInput driver and has not been hardware-tested by the author of this modified page.</p>
-
+<header><h1>G29 · Complete WebHID FFB Lab</h1><p class="subtitle">Rebuild of the original demo controls + corrected rumble · User-adjustable output · Chrome / Edge desktop</p></header>
+<div class="sticky"><span id="topStatus" class="status bad">Not connected</span><button id="emergency" class="stop">STOP ALL FORCES (ESC)</button></div>
+<section class="panel danger-panel">
+  <h2>Before using force feedback</h2>
+  <p class="warn">This page can command <b>100% of the device's requested force</b>. Sudden steering forces may cause injury or hardware damage. Fastening the wheel, clearing hands for initial tests, and starting at a low force are strongly recommended. Do not test with children near the wheel.</p>
+  <p class="note">The tester is experimental and has not been validated on real hardware here. Automatic stopping is best-effort: a frozen browser cannot guarantee that a device motor stops. If the wheel behaves unexpectedly, disconnect its power.</p>
+  <label class="inline"><input type="checkbox" id="ack"> I understand the physical risks and want to enable force-producing tests.</label>
+</section>
+<div class="grid">
+<section class="panel">
+  <h2>1 · Connect / disconnect</h2>
+  <div class="btnrow"><button id="connect" class="main">Connect G29</button><button id="disconnect" disabled>Disconnect safely</button><button id="reconnect">Find previously authorized</button></div>
+  <div class="smallbox"><span>Status</span><span id="status" class="bad">Disconnected</span></div>
+  <div id="device" class="note">WebHID needs HTTPS or localhost; desktop Chromium recommended. G29 PS3: 046D:C24F / PS4: 046D:C260.</div>
+  <p class="note">This page is for G29 IDs from the reference demo. It does not automatically support G920 or other models.</p>
+</section>
+<section class="panel">
+  <h2>2 · Force limits & timing</h2>
+  <div class="inputrow"><label for="strength">Strong rumble / R1</label><input id="strengthNum" type="number" min="0" max="100" step="1" value="10"><input class="range" id="strength" type="range" min="0" max="100" value="10"></div>
+  <div class="inputrow"><label for="weak">Weak rumble / L1</label><input id="weakNum" type="number" min="0" max="100" step="1" value="6"><input class="range" id="weak" type="range" min="0" max="100" value="6"></div>
+  <div class="inputrow"><label for="duration">Effect duration (seconds)</label><input id="durationNum" type="number" min="1" max="15" step="1" value="5"><input class="range" id="duration" type="range" min="1" max="15" value="5"></div>
+  <p class="note">Full 0–100% adjustment is available. Changes affect the next effect and live L1/R1 tests. Individual finite-duration tests automatically stop.</p>
+</section>
+<section class="panel">
+  <h2>3 · Fixed rumble & L1/R1</h2>
+  <div class="btnrow"><button id="rumble" class="main force" disabled>Start alternating rumble</button><button id="rumbleStrong" class="force" disabled>Strong only</button><button id="rumbleWeak" class="force" disabled>Weak only</button></div>
+  <label class="inline"><input type="checkbox" id="shoulder" disabled> Enable original L1 / R1 hold-to-rumble behavior</label>
+  <p class="note">L1 uses the weak level, R1 the strong level; holding both alternates them. “Rumble” means oscillating steering torque, not separate gamepad vibration motors.</p>
+  <p class="note">Effects are turned off on release, connection loss, page blur or stale input. ESC is the emergency stop key.</p>
+  <div class="smallbox"><span>Active effect</span><span id="effect">Idle</span></div><progress id="progress" max="100" value="0"></progress>
+</section>
+<section class="panel">
+  <h2>4 · Constant steering force</h2>
+  <div class="inputrow"><label for="constant">Direction & strength (-100% ← / → +100%)</label><input id="constantNum" type="number" min="-100" max="100" step="1" value="0"><input class="range" id="constant" type="range" min="-100" max="100" step="1" value="0"></div>
+  <div class="btnrow"><button id="forceRun" class="force" disabled>Apply for selected duration</button><button id="forceLeft" class="force" disabled>← Test left</button><button id="forceRight" class="force" disabled>Test right →</button></div>
+  <p class="note">Uses the original demo's slot 0 constant-force protocol; force direction depends on device mounting and mode.</p>
+</section>
+<section class="panel">
+  <h2>5 · Auto-center</h2>
+  <div class="inputrow"><label for="center">Centering strength</label><input id="centerNum" type="number" min="0" max="100" value="10"><input class="range" id="center" type="range" min="0" max="100" value="10"></div>
+  <div class="btnrow"><button id="centerRun" class="force" disabled>Apply for selected duration</button><button id="centerOff" disabled>Deactivate auto-center</button></div>
+  <div class="btnrow" id="centerPresets"><button data-center="0">0%</button><button data-center="1">1%</button><button data-center="10">10%</button><button data-center="25">25%</button><button data-center="50">50%</button><button data-center="75">75%</button><button data-center="100">100%</button></div>
+  <p class="note">Original preset values preserved. Preset buttons select a value; click Apply to activate. Auto-center tests automatically expire.</p>
+</section>
+<section class="panel">
+  <h2>6 · Steering range</h2>
+  <div class="btnrow" id="ranges"><button data-range="90">90°</button><button data-range="180">180°</button><button data-range="270">270°</button><button data-range="360">360°</button><button data-range="900">900°</button></div>
+  <div class="row"><label for="rangeCustom">Custom range (90–900°)</label><input type="number" id="rangeCustom" value="900" min="90" max="900"><button id="rangeApply" disabled>Set range</button></div>
+  <div class="smallbox"><span>Configured steering range</span><span id="rangeValue">900° (default)</span></div>
+  <label class="inline"><input type="checkbox" id="shifterAuto" disabled> Original demo gear-to-range + auto-center behavior</label>
+  <p class="note">Optional: gear 1=180°, 2=270°, 3=360°, 4=540°, 5=720°, 6=900° plus 50% centering; Reverse/Neutral disable centering. Disabled by default to avoid unexpected motor forces.</p>
+</section>
+<section class="panel">
+  <h2>7 · Original effect slots</h2>
+  <div class="btnrow" id="slots"><button data-slot="0">Clear slot 0</button><button data-slot="1">Clear slot 1</button><button data-slot="2">Clear slot 2</button><button data-slot="3">Clear slot 3</button></div>
+  <div class="btnrow"><button id="clearAll" disabled>Clear all slots</button></div>
+  <p class="note">Clears original four Logitech effect slots. The main constant-force test operates in slot 0.</p>
+  <h3>Shift indicator LEDs (original demo helper)</h3>
+  <div class="row"><label for="led">LED mask (0–31)</label><input type="number" id="led" min="0" max="31" value="0"><button id="ledApply" disabled>Set LEDs</button></div>
+  <p class="note">Uses the original demo's LED command. The original's commented-out USB compatibility-mode commands are deliberately not exposed.</p>
+</section>
+<section class="panel">
+  <h2>8 · Live inputs</h2>
+  <canvas id="wheelCanvas" width="500" height="345" aria-label="Visualization of wheel, pedals, D-pad and face buttons"></canvas>
+  <div class="smallbox"><span>Wheel</span><output id="wheelValue">—</output></div><progress id="wheelBar" max="65535" value="32768"></progress>
+  <div class="smallbox"><span>Accelerator (right)</span><output id="accelValue">—</output></div><progress id="accelBar" max="255" value="0"></progress>
+  <div class="smallbox"><span>Brake (center)</span><output id="brakeValue">—</output></div><progress id="brakeBar" max="255" value="0"></progress>
+  <div class="smallbox"><span>Clutch (left)</span><output id="clutchValue">—</output></div><progress id="clutchBar" max="255" value="0"></progress>
+  <div class="smallbox"><span>Gear / D-pad</span><output id="gearValue">—</output></div>
+  <div class="smallbox"><span>Buttons pressed</span><output id="buttons">—</output></div>
+</section>
+<section class="panel full">
+  <h2>9 · Diagnostic log</h2>
+  <div class="btnrow"><button id="logCopy">Copy log</button><button id="logClear">Clear log</button></div><pre id="log">Ready. No force enabled.</pre>
+  <p class="note">Reimplementation based on the documented functionality and HID command patterns from <a href="https://github.com/nondebug/g29-wheel-demo" target="_blank" rel="noopener">nondebug/g29-wheel-demo</a>. Not affiliated with Logitech. All report formats remain experimental and depend on the G29's operating mode and browser/OS access.</p>
+</section>
+</div>
 <script>
 'use strict';
-// Only support the two G29 USB product IDs covered by the reference demo.
-const VENDOR = 0x046d;
-const PRODUCT_IDS = new Set([0xc24f, 0xc260]);
 const $ = id => document.getElementById(id);
-let wheel = null;
-let outputQueue = Promise.resolve();
-let effectToken = 0;
-let running = false;
-let activeEffect = 'idle';
-const FORCE_LIMIT = 0.12;
-const RUMBLE_MS = 5000;
-
-function log(message) {
-  const pre = $('log');
-  pre.textContent = `[${new Date().toLocaleTimeString()}] ${message}\n` + pre.textContent.slice(0, 4500);
+const VID = 0x046d, PIDS = new Set([0xc24f,0xc260]);
+let device = null, queue = Promise.resolve(), token=0, active = null, cancelTimer=null, padState=null;
+let currentRange=900, ffCount=0, lastInputTime=0, lastSentForce=null, lastShoulder=false;
+let consent=false, changing=false, stopRequested=false;
+const clamp=(v,min,max)=>Math.max(min,Math.min(max,Number.isFinite(Number(v))?Number(v):min));
+const n=id=>Number($(id).value);
+const g29=d=>d?.vendorId===VID && PIDS.has(d.productId);
+const ready=()=>Boolean(device?.opened);
+function log(msg){ const p=$('log'); p.textContent=`[${new Date().toLocaleTimeString()}] ${msg}\n`+p.textContent.slice(0,11500); }
+function label(text){$('effect').textContent=text;}
+function ui(){
+ const online=ready();
+ $('topStatus').textContent=online?`Connected: ${device.productName}`:'Not connected';$('topStatus').className='status '+(online?'ok':'bad');
+ $('status').textContent=online?'Connected':'Disconnected';$('status').className=online?'ok':'bad';
+ $('connect').disabled=online; $('disconnect').disabled=!online;
+ for (const id of ['centerOff','rangeApply','clearAll','ledApply']) $(id).disabled=!online;
+ for (const b of document.querySelectorAll('.force')) b.disabled=!online||!consent;
+ $('shoulder').disabled=!online||!consent;
+ $('shifterAuto').disabled=!online||!consent;
+ for (const b of document.querySelectorAll('[data-slot],[data-range]')) b.disabled=!online;
 }
-function controls() {
-  const ready = Boolean(wheel && wheel.opened);
-  $('connect').disabled = ready;
-  $('disconnect').disabled = !ready;
-  $('rumble').disabled = !ready || running;
-  $('centering').disabled = !ready || running;
-  $('stop').disabled = !ready;
-  $('status').textContent = ready ? 'Connected' : 'Not connected';
-  $('status').className = ready ? 'connected' : 'disconnected';
+function bindNumeric(rangeId,numId,min,max){
+ const range=$(rangeId),num=$(numId);
+ function update(v){const x=clamp(v,min,max);range.value=x;num.value=x;}
+ range.addEventListener('input',()=>update(range.value));
+ num.addEventListener('input',()=>{if(num.value!=='')update(num.value)});
+ num.addEventListener('change',()=>update(num.value));
 }
-function effectLabel(text) { $('effect').textContent = text; }
-function looksLikeG29(d) { return d && d.vendorId === VENDOR && PRODUCT_IDS.has(d.productId); }
-
-// Serialize HID writes so stop/clear cannot be reordered with effect updates.
-function send(bytes) {
-  const target = wheel;
-  if (!target || !target.opened) return Promise.reject(new Error('G29 not connected'));
-  const action = outputQueue.catch(() => {}).then(() => {
-    if (wheel !== target || !target.opened) return;
-    return target.sendReport(0, Uint8Array.from(bytes));
-  });
-  outputQueue = action;
-  return action;
+bindNumeric('strength','strengthNum',0,100);bindNumeric('weak','weakNum',0,100);bindNumeric('duration','durationNum',1,15);bindNumeric('constant','constantNum',-100,100);bindNumeric('center','centerNum',0,100);
+function send(bytes){
+ const to=device;
+ if(!to?.opened)return Promise.reject(new Error('G29 not connected'));
+ const action=queue.catch(()=>{}).then(()=>{
+   if(to!==device||!to.opened)return;
+   return to.sendReport(0,new Uint8Array(bytes));
+ });
+ queue=action;return action;
 }
-
-// Logitech G29 constant-force slot 0 (report ID 0, seven-byte payload).
-// 0x80 is approximately neutral, smaller/larger values apply opposing torques.
-async function writeConstantForce(normalized) {
-  const clamped = Math.max(-FORCE_LIMIT, Math.min(FORCE_LIMIT, normalized));
-  const encoded = Math.max(0, Math.min(255, Math.round(127.5 * (1 + clamped))));
-  await send([0x11, 0x08, encoded, 0, 0, 0, 0]);
+function stopTimer(){if(cancelTimer!==null){clearTimeout(cancelTimer);cancelTimer=null}}
+function tickDeadline(ms,id){
+ stopTimer();const started=performance.now();
+ cancelTimer=setTimeout(()=>{if(id===token)stopAll('Effect duration finished')},ms);
+ return started;
 }
-async function clearEffects() {
-  // Slot 0 force off; turn off the simple auto-centering mode as well.
-  await send([0x13, 0x00, 0, 0, 0, 0, 0]);
-  await send([0xf5, 0, 0, 0, 0, 0, 0]);
+async function clearSlot(slot){if(!ready())return;slot=clamp(Math.floor(slot),0,3);await send([(0x10<<slot)|0x03,0x10,0,0,0,0,0]);}
+async function setCenter(p, expectedToken=token){
+ if(!ready()||expectedToken!==token)return;
+ p=clamp(p,0,100);
+ if(p===0){await send([0xf5,0,0,0,0,0,0]);return;}
+ const value=p/100*0xffff;
+ let a,b;
+ if(value<=0xaaaa){a=0x0c*value;b=0x80*value}
+ else{a=0x0c*0xaaaa+0x06*(value-0xaaaa);b=0x80*0xaaaa+0xff*(value-0xaaaa)}
+ a=clamp(Math.round(a/0xaaaa),0,255);b=clamp(Math.round(b/0xaaaa),0,255);
+ await send([0xfe,0x0d,a,a,b,0,0]);if(expectedToken!==token)return;await send([0x14,0,0,0,0,0,0]);
 }
-async function stopEffects() {
-  ++effectToken;  // Cancel any existing test loop immediately.
-  running = false;
-  activeEffect = 'idle';
-  effectLabel('Stopped');
-  $('remaining').value = 0;
-  controls();
-  if (!wheel?.opened) return;
-  try {
-    await clearEffects();
-    log('STOP sent: force slot cleared and auto-center disabled.');
-  } catch (error) {
-    log('Could not stop force: ' + error.message + '. Disconnect wheel power if needed.');
+async function setRange(degrees){if(!ready())return;degrees=clamp(Math.round(degrees),90,900);await send([0xf8,0x81,degrees&255,(degrees>>8)&255,0,0,0]);currentRange=degrees;$('rangeValue').textContent=`${degrees}°`; $('rangeCustom').value=degrees;log('Steering range: '+degrees+'°');}
+async function setLeds(mask){if(!ready())return;mask=clamp(Math.floor(mask),0,31);await send([0xf8,0x12,mask,0,0,0,0]);log('LED mask set: '+mask);}
+// Logitech legacy constant force: 0x80 ~ neutral; [-1,+1] maps to [0,255].
+async function setForce(force){if(!ready())return;force=clamp(force,-1,1);const code=clamp(Math.round((force+1)*255/2),0,255);await send([0x11,0x08,code,0,0,0,0]);lastSentForce=force;}
+async function clearAllEffects(){if(!ready())return;for(let i=0;i<4;i++)await clearSlot(i);await send([0xf5,0,0,0,0,0,0]);lastSentForce=null;}
+async function stopAll(reason='STOP requested'){
+ ++token;stopTimer();active=null;lastShoulder=false;
+ $('shoulder').checked=false;$('shifterAuto').checked=false;
+ $('progress').value=0;label('Stopped');
+ // If two STOP requests overlap, they can safely queue up; cancelling first prevents new effect loops.
+ try{await clearAllEffects();log(reason+' — slots cleared, auto-center off.');}
+ catch(e){log('STOP FAILED: '+e.message+' — disconnect wheel POWER if motor keeps pushing.');}
+ ui();
+}
+async function stopThen(testName){
+ ++token;stopTimer();active=null;$('progress').value=0;
+ await clearAllEffects();if(!ready()||!consent||document.hidden)return null;
+ const id=++token;active=testName;label(testName);return id;
+}
+async function runConstant(force){
+ if(!ready()||!consent)return;
+ try{const id=await stopThen('Constant force '+Math.round(force*100)+'%');if(id===null)return;
+   const dur=n('duration')*1000;const started=tickDeadline(dur,id);await setForce(force);
+   log(`Constant force ${Math.round(force*100)}% for ${dur/1000}s (slot 0).`);
+   monitorProgress(id,started,dur);
+ }catch(e){log('Constant-force failed: '+e.message);await stopAll('Error stop');}
+}
+function monitorProgress(id,started,dur){
+ function frame(){if(id!==token)return;const time=performance.now()-started;$('progress').value=clamp(time/dur*100,0,100);if(time<dur)requestAnimationFrame(frame)}requestAnimationFrame(frame);
+}
+async function runCenter(){
+ if(!ready()||!consent)return;
+ try{const id=await stopThen('Auto-center '+n('center')+'%');if(id===null)return;
+   const dur=n('duration')*1000;const started=tickDeadline(dur,id);await setCenter(n('center'),id);monitorProgress(id,started,dur);
+   log(`Centering ${n('center')}% for ${dur/1000}s.`);
+ }catch(e){log('Auto-center failed: '+e.message);await stopAll('Error stop');}
+}
+async function runRumble(kind){
+ if(!ready()||!consent)return;
+ try{
+  const id=await stopThen('Rumble '+kind);if(id===null)return;
+  const duration=n('duration')*1000;const begun=performance.now();active='rumble';
+  log(`Corrected rumble ${kind}, strong ${n('strength')}%, weak ${n('weak')}%, duration ${duration/1000}s.`);
+  // No setInterval leaks; each report is awaited before sending the next.
+  let i=0;
+  while(id===token&&ready()&&consent&&!document.hidden&&document.hasFocus()){
+   const elapsed=performance.now()-begun;if(elapsed>=duration)break;
+   const fade=Math.max(0,Math.min(1,elapsed/150,(duration-elapsed)/150));
+   const ampStrong=n('strength')/100,ampWeak=n('weak')/100;
+   let force=0;
+   if(kind==='strong')force=(i%4<2?1:-1)*ampStrong;
+   else if(kind==='weak')force=(i%2?1:-1)*ampWeak;
+   else force=(i%4<2?ampStrong:ampWeak)*(i%2?1:-1);
+   await setForce(force*fade);
+   $('progress').value=clamp(elapsed/duration*100,0,100);
+   await new Promise(resolve=>setTimeout(resolve,15));i++;
   }
+  if(id===token)await stopAll('Rumble finished');
+ }catch(e){log('Rumble failed: '+e.message);await stopAll('Error stop')}
 }
-
-async function connectWheel() {
-  if (!('hid' in navigator) || !window.isSecureContext) {
-    log('WebHID unavailable. Use desktop Chrome/Edge over HTTPS or http://localhost.');
-    return;
+async function connect(d){
+ if(!g29(d))throw new Error('Only G29 product IDs C24F and C260 are supported.');
+ if(ready())await disconnect();
+ if(!d.opened)await d.open();
+ device=d;padState=null;lastInputTime=0;device.addEventListener('inputreport',onInputReport);
+ deviceName();ui();
+ try{await clearAllEffects();await setRange(900);log('G29 connected, FFB stopped, 900° range set.');}
+ catch(e){log('Initialization warning: '+e.message)}
+}
+function deviceName(){$('device').textContent=device?.opened?`${device.productName} — VID 046D / PID ${device.productId.toString(16).toUpperCase()}`:'No G29 connected';}
+async function askConnect(){
+ if(!('hid'in navigator)||!window.isSecureContext){log('WebHID unavailable. Use HTTPS or localhost in desktop Chrome / Edge.');return;}
+ try{const ds=await navigator.hid.requestDevice({filters:[{vendorId:VID,productId:0xc24f},{vendorId:VID,productId:0xc260}]});if(ds.length)await connect(ds[0]);}
+ catch(e){log('Connection error: '+e.name+' '+e.message)}
+}
+async function findAuthorized(){if(!('hid'in navigator))return;try{const ds=await navigator.hid.getDevices();const d=ds.find(g29);if(d)await connect(d);else log('No previously authorized G29; click Connect G29.')}catch(e){log('Find devices: '+e.message)}}
+async function disconnect(){
+ await stopAll('Disconnect requested');const old=device;if(!old)return;
+ old.removeEventListener('inputreport',onInputReport);try{if(old.opened)await old.close()}catch(e){log('Close error: '+e.message)}
+ if(device===old)device=null;padState=null;deviceName();ui();log('Wheel disconnected.');
+}
+function parseInput(view){
+ const b=new Uint8Array(view.buffer,view.byteOffset,view.byteLength);if(b.length<9)return null;
+ const v={},d=b[0]&15;
+ v.dpad=d;v.wheel=(b[5]<<8)|b[4];v.right=255-b[6];v.center=255-b[7];v.left=255-b[8];
+ const face=['Cross','Square','Circle','Triangle'];for(let i=0;i<4;i++)v['button'+face[i]]=Boolean(b[0]&(1<<(4+i)));
+ const names=['R1','L1','R2','L2','Share','Options','R3','L3'];for(let i=0;i<8;i++)v['button'+names[i]]=Boolean(b[1]&(1<<i));
+ const gearNames=['1','2','3','4','5','6','R'];v.gear='N';for(let i=0;i<7;i++){if(b[2]&(1<<i)){v.gear=gearNames[i];break}}
+ v.buttonPlus=Boolean(b[2]&128);v.buttonMinus=Boolean(b[3]&1);v.dialCW=Boolean(b[3]&2);v.dialCCW=Boolean(b[3]&4);v.buttonDial=Boolean(b[3]&8);v.buttonPS=Boolean(b[3]&16);
+ v.up=[0,1,7].includes(d);v.down=[3,4,5].includes(d);v.leftD=[5,6,7].includes(d);v.rightD=[1,2,3].includes(d);
+ v.turn=v.wheel/65535*2-1;v.angle=v.turn*currentRange/2;
+ return v;
+}
+function updateInput(v){
+ $('wheelValue').textContent=`${v.angle.toFixed(1)}° · raw ${v.wheel}`;$('wheelBar').value=v.wheel;
+ for(const [txt,bar,val] of [['accelValue','accelBar',v.right],['brakeValue','brakeBar',v.center],['clutchValue','clutchBar',v.left]]){
+  $(txt).textContent=`${Math.round(val/255*100)}%`;$(bar).value=val;
+ }
+ $('gearValue').textContent=`${v.gear} / ${v.dpad===8?'Neutral':v.dpad}`;
+ const btn=['Cross','Square','Circle','Triangle','L1','R1','L2','R2','Share','Options','L3','R3','PS','Plus','Minus','Dial'].filter(name=>v['button'+name]);
+ if(v.dialCW)btn.push('Dial clockwise');if(v.dialCCW)btn.push('Dial counterclockwise');
+ $('buttons').textContent=btn.join(', ')||'None';
+}
+function onInputReport(event){
+ if(event.device!==device)return;const v=parseInput(event.data);if(!v)return;
+ lastInputTime=performance.now();const prev=padState;padState=v;updateInput(v);
+ if(prev?.gear!==v.gear&&$('shifterAuto').checked&&consent&&ready()){
+  const ranges={'1':180,'2':270,'3':360,'4':540,'5':720,'6':900,'R':900};
+  const gear=v.gear;
+  // Only permit shifter auto-centering outside finite tests.
+  if(!active||active==='gear'){
+   active='gear';const myId=++token;stopTimer();
+   (async()=>{try{if(ranges[gear])await setRange(ranges[gear]);if(myId!==token)return;await setCenter(gear==='N'||gear==='R'?0:50,myId);if(myId!==token)return;tickDeadline(n('duration')*1000,myId);label('Shifter: '+gear);log(`Gear ${gear}: range ${ranges[gear]||currentRange}°, auto-center ${gear==='N'||gear==='R'?0:50}%`)}catch(e){log('Shifter behavior error: '+e.message);await stopAll('Error stop')}})();
   }
-  try {
-    const choices = await navigator.hid.requestDevice({ filters: [
-      {vendorId: VENDOR, productId: 0xc24f},
-      {vendorId: VENDOR, productId: 0xc260}
-    ] });
-    if (!choices.length) { log('No device selected.'); return; }
-    const chosen = choices[0];
-    if (!looksLikeG29(chosen)) { log('Rejected: not a known G29 device.'); return; }
-    if (wheel?.opened) await disconnectWheel();
-    if (!chosen.opened) await chosen.open();
-    wheel = chosen;
-    wheel.addEventListener('inputreport', readInput);
-    $('device').textContent = `${wheel.productName} · VID 046D · PID ${wheel.productId.toString(16).toUpperCase()}`;
-    effectLabel('Ready');
-    controls();
-    log('G29 connected. No force applied; choose a low-strength test.');
-  } catch (e) { log(`Connection failed: ${e.name}: ${e.message}`); }
+ }
 }
-async function disconnectWheel() {
-  await stopEffects();
-  const old = wheel;
-  if (!old) return;
-  old.removeEventListener('inputreport', readInput);
-  // The close can fail if the USB cable was already removed.
-  try { if (old.opened) await old.close(); } catch (e) { log('Close: ' + e.message); }
-  if (wheel === old) wheel = null;
-  $('device').textContent = 'Disconnected';
-  controls();
-  log('G29 disconnected.');
+function draw(){
+ const canvas=$('wheelCanvas'),c=canvas.getContext('2d'),w=canvas.width,h=canvas.height,v=padState;
+ c.clearRect(0,0,w,h);c.fillStyle='#101b2a';c.fillRect(0,0,w,h);
+ c.save();c.translate(240,147);
+ c.lineWidth=27;c.strokeStyle='#44586e';c.beginPath();c.arc(0,0,94,0,Math.PI*2);c.stroke();
+ c.save();c.rotate((v?v.angle:0)*Math.PI/180);c.strokeStyle='#90b4d0';c.lineWidth=11;for(let i=0;i<3;i++){c.rotate(2*Math.PI/3);c.beginPath();c.moveTo(0,0);c.lineTo(0,-81);c.stroke()};c.restore();
+ c.fillStyle='#5f7c99';c.beginPath();c.arc(0,0,29,0,Math.PI*2);c.fill();
+ if(v){c.fillStyle='#6bdcce';c.beginPath();const rad=v.angle*Math.PI/180;c.arc(94*Math.sin(rad),-94*Math.cos(rad),8,0,2*Math.PI);c.fill()}
+ function light(x,y,label,on){c.beginPath();c.fillStyle=on?'#5be1c5':'#354961';c.arc(x,y,12,0,Math.PI*2);c.fill();c.font='12px system-ui';c.fillStyle='#0c1b25';c.textAlign='center';c.fillText(label,x,y+4)}
+ light(170,-105,'△',v?.buttonTriangle);light(143,-80,'□',v?.buttonSquare);light(197,-80,'◯',v?.buttonCircle);light(170,-50,'×',v?.buttonCross);
+ light(-173,-80,'↑',v?.up);light(-173,-40,'↓',v?.down);light(-198,-60,'←',v?.leftD);light(-148,-60,'→',v?.rightD);
+ c.restore();
+ const pedals=[['Clutch',v?.left],['Brake',v?.center],['Throttle',v?.right]];
+ pedals.forEach(([title,val],i)=>{const x=106+i*113,y=288;c.fillStyle='#314760';c.fillRect(x,y,63,28);c.fillStyle='#68d4c1';c.fillRect(x,y,63*(val||0)/255,28);c.fillStyle='#c9e7f8';c.font='12px system-ui';c.textAlign='center';c.fillText(title,x+31,y-7)});
+ requestAnimationFrame(draw);
 }
-
-async function runRumble() {
-  if (!wheel?.opened || running) return;
-  await stopEffects();
-  if (!wheel?.opened || document.hidden) return;
-  const myToken = ++effectToken;
-  running = true;
-  activeEffect = 'rumble';
-  controls();
-  log('Starting 5-second low-force alternating steering feedback.');
-  const startedAt = performance.now();
-  const stepMs = 16;
-  try {
-    while (myToken === effectToken && wheel?.opened && !document.hidden) {
-      const elapsed = performance.now() - startedAt;
-      if (elapsed >= RUMBLE_MS) break;
-      // Soft fade-in/out. Oscillation roughly 15 Hz to mimic rumble on an FFB motor.
-      const fade = Math.min(1, elapsed / 200, (RUMBLE_MS - elapsed) / 200);
-      const direction = Math.sin(2 * Math.PI * 15 * elapsed / 1000) >= 0 ? 1 : -1;
-      const force = FORCE_LIMIT * Math.max(0, fade) * direction;
-      await writeConstantForce(force);
-      $('remaining').value = elapsed;
-      effectLabel(`Rumble: ${(RUMBLE_MS - elapsed) / 1000 < 0 ? 0 : (RUMBLE_MS - elapsed) / 1000 | 0}s remaining`);
-      await new Promise(resolve => setTimeout(resolve, stepMs));
-    }
-  } catch (e) { log('Rumble failed: ' + e.message); }
-  finally {
-    if (myToken === effectToken) {
-      log('Rumble test finished.');
-      await stopEffects();
-    }
-  }
+function startShoulderLoop(){
+ // More robust than the original blind 15ms setInterval: each send must finish, and stale inputs are refused.
+ let inFlight=false;let prevActive=false;
+ async function tick(){
+  const v=padState, now=performance.now();
+  const should=ready()&&consent&&$('shoulder').checked&&!document.hidden&&document.hasFocus()&&v&&(now-lastInputTime<500)&&(v.buttonL1||v.buttonR1);
+  if(should&&!inFlight&&(!active||active==='shoulder')){
+   inFlight=true;active='shoulder';const dir=(ffCount%2?1:-1);
+   const amp=v.buttonR1&&v.buttonL1 ? (ffCount%4<2?n('strength'):n('weak'))/100 : (v.buttonR1?n('strength'):n('weak'))/100;
+   const force=dir*amp;
+   try{await setForce(force)}catch(e){log('Shoulder FFB error: '+e.message);await stopAll('Error stop')}
+   finally{inFlight=false;ffCount++}prevActive=true;label('L1/R1 feedback');
+  }else if(!should&&prevActive){prevActive=false;if(active==='shoulder'){active=null;try{await clearSlot(0);label('Idle (L1/R1 released)')}catch(e){log('Shoulder stop: '+e.message)}}}
+  setTimeout(tick,20);
+ }
+ tick();
 }
-
-async function setLowAutocenter() {
-  if (!wheel?.opened || running) return;
-  await stopEffects();
-  if (!wheel?.opened) return;
-  try {
-    // Standard command layout from the demo, strength limited to 3%.
-    const value = 0.03 * 0xffff;
-    const gainA = Math.round(0x0c * value / 0xaaaa);
-    const gainB = Math.round(0x80 * value / 0xaaaa);
-    await send([0xfe, 0x0d, gainA, gainA, gainB, 0, 0]);
-    await send([0x14, 0, 0, 0, 0, 0, 0]);
-    activeEffect = 'autocenter';
-    effectLabel('Auto-center 3% (press STOP to disable)');
-    log('Low auto-center active. Press STOP ALL FORCES to disable it.');
-  } catch(e) { log('Auto-center failed: ' + e.message); await stopEffects(); }
-}
-
-function readInput(event) {
-  if (event.device !== wheel) return;
-  const data = event.data;
-  if (!data || data.byteLength < 9) return;
-  // These offsets match the G29 input report in the source demo.
-  const steering = data.getUint16(4, true);
-  const accel = 255 - data.getUint8(6);
-  const brake = 255 - data.getUint8(7);
-  $('steering').textContent = `${((steering / 65535) * 100).toFixed(1)}%`;
-  $('accel').textContent = `${Math.round(accel / 255 * 100)}%`;
-  $('brake').textContent = `${Math.round(brake / 255 * 100)}%`;
-  $('axis-steering').value = steering;
-  $('axis-accel').value = accel;
-  $('axis-brake').value = brake;
-  const buttons = data.getUint8(1);
-  $('buttons').textContent = `${(buttons & 0x02) ? 'L1 pressed' : 'L1 released'} · ${(buttons & 0x01) ? 'R1 pressed' : 'R1 released'}`;
-}
-
-$('connect').addEventListener('click', connectWheel);
-$('disconnect').addEventListener('click', disconnectWheel);
-$('rumble').addEventListener('click', runRumble);
-$('centering').addEventListener('click', setLowAutocenter);
-$('stop').addEventListener('click', stopEffects);
-
-if ('hid' in navigator) {
-  navigator.hid.addEventListener('disconnect', async event => {
-    if (event.device !== wheel) return;
-    ++effectToken;
-    running = false;
-    wheel = null;
-    $('device').textContent = 'USB disconnected';
-    effectLabel('Disconnected');
-    controls();
-    log('USB device disconnected.');
-  });
-}
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) { void stopEffects(); }
-});
-window.addEventListener('pagehide', () => { void stopEffects(); });
-controls();
-if (!('hid' in navigator)) log('This browser does not expose WebHID. Try Chrome or Edge desktop.');
+$('connect').addEventListener('click',askConnect);$('reconnect').addEventListener('click',findAuthorized);$('disconnect').addEventListener('click',disconnect);
+$('emergency').addEventListener('click',()=>stopAll('EMERGENCY STOP'));
+$('ack').addEventListener('change',e=>{consent=e.target.checked;if(!consent)stopAll('Force permission revoked');ui()});
+$('rumble').addEventListener('click',()=>runRumble('alternating'));
+$('rumbleStrong').addEventListener('click',()=>runRumble('strong'));
+$('rumbleWeak').addEventListener('click',()=>runRumble('weak'));
+$('forceRun').addEventListener('click',()=>runConstant(n('constant')/100));
+$('forceLeft').addEventListener('click',()=>runConstant(-n('strength')/100));
+$('forceRight').addEventListener('click',()=>runConstant(n('strength')/100));
+$('centerRun').addEventListener('click',runCenter);
+$('centerOff').addEventListener('click',async()=>{await stopAll('Auto-center disabled')});
+$('clearAll').addEventListener('click',()=>stopAll('All slots cleared'));
+$('rangeApply').addEventListener('click',()=>setRange(n('rangeCustom')).catch(e=>log('Range: '+e.message)));
+$('ledApply').addEventListener('click',()=>setLeds(n('led')).catch(e=>log('LED: '+e.message)));
+$('centerPresets').addEventListener('click',e=>{const b=e.target.closest('[data-center]');if(b){$('center').value=$('centerNum').value=b.dataset.center;log('Auto-center selected: '+b.dataset.center+'%; click Apply to test.')}});
+$('ranges').addEventListener('click',e=>{const b=e.target.closest('[data-range]');if(b)setRange(Number(b.dataset.range)).catch(err=>log('Range: '+err.message))});
+$('slots').addEventListener('click',e=>{const b=e.target.closest('[data-slot]');if(b){(active?stopAll('Slot clear interrupted active effect'):clearSlot(Number(b.dataset.slot))).then(()=>log('Cleared slot '+b.dataset.slot)).catch(err=>log('Clear slot: '+err.message))}});
+$('logCopy').addEventListener('click',()=>navigator.clipboard?.writeText($('log').textContent).then(()=>log('Log copied')).catch(()=>log('Clipboard failed (needs HTTPS).')));
+$('logClear').addEventListener('click',()=>$('log').textContent='Log cleared.');
+$('shoulder').addEventListener('change',e=>{if(e.target.checked){$('shifterAuto').checked=false;log('L1/R1 hold-to-rumble enabled')}else if(active==='shoulder')stopAll('Shoulder tests disabled')});
+$('shifterAuto').addEventListener('change',e=>{if(e.target.checked){$('shoulder').checked=false;log('Shifter behavior enabled; original demo auto-center ~50% can move wheel')}else if(active==='gear')stopAll('Shifter behavior disabled')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();stopAll('ESC pressed')}});
+window.addEventListener('blur',()=>{if(ready())stopAll('Page lost focus')});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&ready())stopAll('Tab hidden')});
+window.addEventListener('pagehide',()=>{if(ready())stopAll('Page closing (best effort)')});
+if('hid'in navigator)navigator.hid.addEventListener('disconnect',e=>{if(e.device===device){++token;stopTimer();active=null;device?.removeEventListener('inputreport',onInputReport);device=null;padState=null;label('Disconnected');deviceName();ui();log('USB disconnected.')}});
+ui();draw();startShoulderLoop();
+// The original included commented compatibility-mode switching commands (EXT_CMD*)
+// which can change USB device identity. They are intentionally omitted for safety.
 </script>
 </body>
 </html>
